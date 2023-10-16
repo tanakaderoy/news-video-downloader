@@ -12,9 +12,10 @@ import {
 } from "react-native";
 import { Button, Divider, Header, Icon, Text } from "react-native-elements";
 import { WebView } from "react-native-webview";
-import { Video, AVPlaybackStatus } from "expo-av";
+import { Video, AVPlaybackStatus, ResizeMode } from "expo-av";
 import useDownloadFile from "./useDownloadFile";
 import { ProgressBar, Colors } from "react-native-paper";
+import { FFprobeKit, Statistics } from "ffmpeg-kit-react-native";
 
 export default function App() {
   const [gotVideo, setGotVideo] = useState(false);
@@ -23,35 +24,36 @@ export default function App() {
   const [url, setUrl] = useState("https://abc6onyourside.com/");
   const [video, setVideo] = useState<VideoInfo>();
   const vidRef = useRef<Video>(null);
-  const [downloadProgress, setDownloadProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
-  const callback = useCallback((downloadProgress) => {
-    const progress =
-      downloadProgress.totalBytesWritten /
-      downloadProgress.totalBytesExpectedToWrite;
-    console.log(progress);
-    if (progress === 1) {
+  const callback = useCallback((done: boolean) => {
+    if (done) {
       Alert.alert(
         "Video downloaded",
         `Finished downloading ${video?.fileName}`
       );
+      setIsDownloading(false);
     }
 
-    setDownloadProgress(progress);
-  }, []);
+  }, [video]);
 
   const script = `
-  let fileName = sinclairDigital.storyData.canonicalUrl.replace('/','')+'.mp4'
-  let vid = sinclairDigital.storyData.videos[0].mp4Url
-  let title = sinclairDigital.storyData.pageTitle
-  window.ReactNativeWebView.postMessage(JSON.stringify({vid,fileName, title}))`;
+  console.log("Okay hey we searching")
+  let tanaka = "Tanaka"
+  console.log(tanaka)
+  new Promise(r => setTimeout(r, 3000)).then(() => {
+    let fileName = sinclairVideo().playlist.super[0].title.replace(/\s/g,'').trim()+'.mp4'
+    let vid = sinclairVideo().playlist.super[0].file
+    let title = document.title
+    window.ReactNativeWebView.postMessage(JSON.stringify({vid,fileName, title}))
+  })
+`;
   const searchVideo = () => {
     Keyboard.dismiss();
     setGotVideo(false);
-    setDownloadProgress(0);
+    setIsDownloading(false);
     console.log("Pressed");
 
-    url === query ? webviewRef.current?.reload() : setUrl(query);
+   setUrl(query);
   };
 
   return (
@@ -103,7 +105,7 @@ export default function App() {
               ref={vidRef}
               style={styles.video}
               useNativeControls
-              resizeMode="contain"
+              resizeMode={ResizeMode.CONTAIN}
               isLooping
               source={{ uri: video?.vid ?? "" }}
             />
@@ -118,12 +120,14 @@ export default function App() {
                 />
               }
               onPress={async () => {
+                setIsDownloading(true)
                 await useDownloadFile(video?.fileName, video?.vid, callback);
               }}
             />
             <Text> Download Progress</Text>
             <ProgressBar
-              progress={downloadProgress}
+              indeterminate
+              visible={isDownloading}
               color={Colors.blue100}
               style={{ height: 4, margin: 7 }}
             />
@@ -147,7 +151,7 @@ export default function App() {
                   setGotVideo(false);
                   setVideo(undefined);
                 }
-                setDownloadProgress(0);
+                setIsDownloading(false);
                 setQuery(state.url !== query ? state.url : query);
               }}
               onMessage={async (event) => {
