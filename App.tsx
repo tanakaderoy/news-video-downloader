@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useRef, useState } from "react";
+import React, { PropsWithChildren, useCallback, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -53,7 +53,7 @@ export default function App() {
     setIsDownloading(false);
     console.log("Pressed");
 
-   setUrl(query);
+    setUrl(query);
   };
 
   return (
@@ -170,7 +170,7 @@ export default function App() {
   );
 }
 
-const DismissKeyboard: React.FC = ({ children }) => (
+const DismissKeyboard: React.FC<PropsWithChildren<{}>> = ({ children }) => (
   <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
     {children}
   </TouchableWithoutFeedback>
